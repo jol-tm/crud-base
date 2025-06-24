@@ -2,102 +2,101 @@
 
 class CRUD
 {
-    private $hostname = "localhost";
-    private $username = "root";
-    private $password = "123";
-    private $database = "testdb";
-    private $connection;
+    private string $hostname = "localhost";
+    private string $username = "user";
+    private string $password = "";
+    private string $database = "mydb";
+    private ?object $connection;
 
     public function __construct()
     {
-        $this->connection = new mysqli($this->hostname, $this->username, $this->password, $this->database);
+        try {
+            $this->connection = new PDO("mysql:host=$this->hostname;dbname=$this->database;charset=UTF8", $this->username, $this->password);
+        } catch (PDOException $e) {
+            error_log($e->getMessage(), 3, "./errors.log");
+            echo $e->getMessage();
+        }
+    }
 
-        if ($this->connection->connect_error)
-        {
-            error_log($this->connection->connect_error, 3, './logs/errors.log');
+    public function create(string $table, array $data): bool
+    {
+        try {
+            $columns = implode(", ", array_keys($data));
+            $placeholders = ":" . implode(", :", array_keys($data));
+
+            $sql = "INSERT INTO $table ($columns) VALUES ($placeholders)";
+            $stmt = $this->connection->prepare($sql);
+
+            $stmt->execute($data);
+            $stmt->closeCursor();
+
+            return true;
+        } catch (PDOException $e) {
+            error_log($e->getMessage(), 3, "./errors.log");
             return false;
         }
-
-        $this->connection->set_charset("utf8");
     }
 
-    public function create($table, $data, $parameters = null)
+    public function read(string $table): array|bool
     {
-        $columns = implode(", ", array_keys($data));
-        $values = implode(", ", $data);
-
-        $sql = "INSERT INTO $table ($columns) VALUES ($values) $parameters";
-
-        if ($stmt->execute())
-        {
-            $stmt->close();
-            return true;
-        }
-        
-        error_log($stmt->error, 3, './logs/errors.log');
-        $stmt->close();
-        return false;
-    }
-
-    public function read($table, $parameters = null) 
-    {
-        $sql = "SELECT * FROM $table $parameters";
-        $stmt = $this->connection->prepare($sql);
-
-        if ($stmt->execute())
-        {
-            $result = $stmt->get_result();
-            $data = $result->fetch_all(MYSQLI_ASSOC);
-
-            $stmt->close();
+        try {
+            $sql = "SELECT * FROM $table";
+            
+            $stmt = $this->connection->prepare($sql);
+            $stmt->execute();
+            
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            $stmt->closeCursor();
             return $data;
+        } catch (PDOException $e) {
+            error_log($e->getMessage(), 3, "./errors.log");
+            return false;
         }
-
-        error_log($stmt->error, 3, './logs/errors.log');
-        $stmt->close();
-        return false;
     }
 
-    public function update($table, $data, $parameters = null)
+    public function update(string $table, array $data, array $key): bool
     {
-        $columns = implode(", ", array_keys($data));
-        $values = implode(", ", $data);
-        
-        $sql = "UPDATE $table SET $columns = $values $parameters";
-        
-        if ($stmt->execute())
-        {
-            $stmt->close();
+        try {
+            $keyName = array_keys($key)[0];
+            $keyValue = $key[$keyName];
+            $update_assignments = [];
+
+            foreach ($data as $column => $value) {
+                $update_assignments[] = "$column = :$column";
+            }
+
+            $updates = implode(", ", $update_assignments);
+
+            $sql = "UPDATE $table SET $updates WHERE $keyName = :$keyName";
+            $stmt = $this->connection->prepare($sql);
+
+            $data[$keyName] = $keyValue;
+            $stmt->execute($data);
+
+            $stmt->closeCursor();
             return true;
+        } catch (PDOException $e) {
+            error_log($e->getMessage(), 3, "./errors.log");
+            return false;
         }
-        
-        error_log($stmt->error, 3, './logs/errors.log');
-        $stmt->close();
-        return false;
     }
 
-    public function delete($table, $id)
+    public function delete(string $table, array $key): bool
     {
-        $sql = "DELETE FROM $table WHERE id = ?";
-        $stmt = $this->connection->prepare($sql);
-        $stmt->bind_param("i", $id);
-        
-        if ($stmt->execute())
-        {
-            $stmt->close();
+        try {
+            $keyName = array_keys($key)[0];
+
+            $sql = "DELETE FROM $table WHERE $keyName = :$keyName";
+
+            $stmt = $this->connection->prepare($sql);
+            $stmt->execute($key);
+
+            $stmt->closeCursor();
             return true;
-        } 
-        
-        error_log($stmt->error, 3, './logs/errors.log');
-        $stmt->close();
-        return false;
-    }
-     
-    public function __destruct() 
-    {
-        if ($this->connection) 
-        {
-            $this->connection->close();
+        } catch (PDOException $e) {
+            error_log($e->getMessage(), 3, "./errors.log");
+            return false;
         }
     }
 }
