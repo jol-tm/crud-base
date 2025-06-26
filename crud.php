@@ -1,4 +1,5 @@
 <?php
+
 class CRUD
 {
     private string $hostname = "localhost";
@@ -18,11 +19,12 @@ class CRUD
             error_log($e, 3, "./errors.log");
         }
     }
-    
+
     public function __destruct()
     {
         $this->connection = null;
     }
+
     public function create(string $table, array $data): bool
     {
         try
