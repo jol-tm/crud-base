@@ -12,11 +12,13 @@ class CRUD
     {
         try
         {
+            date_default_timezone_set('America/Sao_Paulo');
+
             $this->connection = new PDO("mysql:host=$this->hostname;dbname=$this->database;charset=UTF8", $this->username, $this->password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
         }
         catch (PDOException $e)
         {
-            error_log($e, 3, "./errors.log");
+            error_log("\n\n" . date("Y-m-d H:i:s") . " | " . $e, 3, "./errors.log");
         }
     }
 
@@ -36,34 +38,32 @@ class CRUD
             $stmt = $this->connection->prepare($sql);
 
             $stmt->execute($data);
-            $stmt->closeCursor();
 
             return true;
         }
         catch (PDOException $e)
         {
-            error_log($e, 3, "./errors.log");
+            error_log("\n\n" . date("Y-m-d H:i:s") . " | " . $e, 3, "./errors.log");
             return false;
         }
     }
 
-    public function read(string $table): array|bool
+    public function read(string $table, string $condition = "true"): array|bool
     {
         try
         {
-            $sql = "SELECT * FROM $table";
+            $sql = "SELECT * FROM $table WHERE $condition";
 
             $stmt = $this->connection->prepare($sql);
             $stmt->execute();
 
             $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            $stmt->closeCursor();
             return $data;
         }
         catch (PDOException $e)
         {
-            error_log($e, 3, "./errors.log");
+            error_log("\n\n" . date("Y-m-d H:i:s") . " | " . $e, 3, "./errors.log");
             return false;
         }
     }
@@ -72,8 +72,8 @@ class CRUD
     {
         try
         {
-            $keyName = array_keys($key)[0];
-            $keyValue = $key[$keyName];
+            $key_name = array_keys($key)[0];
+            $key_value = $key[$key_name];
             $update_assignments = [];
 
             foreach ($data as $column => $value)
@@ -83,18 +83,17 @@ class CRUD
 
             $updates = implode(", ", $update_assignments);
 
-            $sql = "UPDATE $table SET $updates WHERE $keyName = :$keyName";
+            $sql = "UPDATE $table SET $updates WHERE $key_name = :$key_name";
             $stmt = $this->connection->prepare($sql);
 
-            $data[$keyName] = $keyValue;
+            $data[$key_name] = $key_value;
             $stmt->execute($data);
 
-            $stmt->closeCursor();
             return true;
         }
         catch (PDOException $e)
         {
-            error_log($e, 3, "./errors.log");
+            error_log("\n\n" . date("Y-m-d H:i:s") . " | " . $e, 3, "./errors.log");
             return false;
         }
     }
@@ -103,19 +102,18 @@ class CRUD
     {
         try
         {
-            $keyName = array_keys($key)[0];
+            $key_name = array_keys($key)[0];
 
-            $sql = "DELETE FROM $table WHERE $keyName = :$keyName";
+            $sql = "DELETE FROM $table WHERE $key_name = :$key_name";
 
             $stmt = $this->connection->prepare($sql);
             $stmt->execute($key);
 
-            $stmt->closeCursor();
             return true;
         }
         catch (PDOException $e)
         {
-            error_log($e, 3, "./errors.log");
+            error_log("\n\n" . date("Y-m-d H:i:s") . " | " . $e, 3, "./errors.log");
             return false;
         }
     }
