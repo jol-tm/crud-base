@@ -48,14 +48,32 @@ class CRUD
         }
     }
 
-    public function read(string $table, string $condition = "true"): array|bool
+    public function read(string $table, array $condition = [1 => 1], array $searching_term = []): array|bool
     {
         try
         {
-            $sql = "SELECT * FROM $table WHERE $condition";
+            if ($searching_term)
+            {
+                $searching_key = array_keys($searching_term)[0];
+                $searching_value = $searching_term[$searching_key];
+                $searching_value_wildcarded = "%$searching_value%";
+                
+                $binding_params = [$searching_key => $searching_value_wildcarded];
+                
+                $sql = "SELECT * FROM $table WHERE $searching_key LIKE :$searching_key";
+            }
+            else
+            {
+                $condition_key = array_keys($condition)[0];
+                $condition_value = $condition[$condition_key];
+
+                $binding_params = [$condition_key => $condition_value];
+
+                $sql = "SELECT * FROM $table WHERE $condition_key = :$condition_key";
+            }
 
             $stmt = $this->connection->prepare($sql);
-            $stmt->execute();
+            $stmt->execute($binding_params);
 
             $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

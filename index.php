@@ -23,7 +23,7 @@
 
     $crud = new CRUD();
 
-    $rows = $crud->read('users');
+    $rows = $crud->read('users', searching_term: ['email' => 'jo']);
 
     foreach ($rows as $row)
     {

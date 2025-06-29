@@ -22,7 +22,6 @@
         <button type="submit">Create</button>
     </form>
     <?php
-    ini_set('display_errors', 1);
     require_once '../../crud.php';
 
     $crud = new CRUD();
