@@ -17,21 +17,33 @@
 
 <body>
     <h1>Registered data</h1>
-    <a href="data/create/">Create data</a>
     <?php
-    require_once 'crud.php';
+    ini_set('display_errors', 1);
+    require_once 'DataRepository.php';
+    require_once 'DatabaseConnection.php';
 
-    $crud = new CRUD();
+    $connection = new DatabaseConnection();
 
-    $rows = $crud->read('users', searching_term: ['email' => 'jo']);
+    $data = new DataRepositoy($connection->start());
+
+    if (isset($_GET['idToDelete']))
+    {
+        $data->delete('usuarios', ['id' => $_GET['idToDelete']]);
+        header('Location: ./');
+    }
+
+    // $data->create('usuarios', ['nome' => 'test', 'email' => 'a@asd'], ['senha' => 123]);
+
+    $rows = $data->read('usuarios');
 
     foreach ($rows as $row)
     {
         echo "<div class='box'>";
-        echo "<div><strong>name: </strong>{$row['name']}</div>";
+        echo "<div><strong>id: </strong>{$row['id']}</div>";
+        echo "<div><strong>name: </strong>{$row['nome']}</div>";
         echo "<div><strong>email: </strong>{$row['email']}</div>";
-        echo "<div><strong>password: </strong>{$row['password']}</div>";
-        echo "<a href='data/delete/?id={$row['id']}'>delete</a>";
+        echo "<div><strong>senha: </strong>{$row['senha']}</div>";
+        echo "<a href='./?idToDelete={$row['id']}'>deletar</a>";
         echo "</div>";
     }
     ?>
